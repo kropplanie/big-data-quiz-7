@@ -12,11 +12,9 @@ import os, pathlib
 
 # Ref: https://github.com/FinanceData/FinanceDataReader#quick-start
 # import FinanceDataReader as fdr
-try: # updated to import twelvedata instead of FinanceDataReader
-    import twelvedata
-except ModuleNotFoundError:
-    !pip install twelvedata[pandas,matplotlib,plotly,websocket-client]
-    import twelvedata
+# updated to import twelvedata instead of FinanceDataReader
+import twelvedata
+
 from twelvedata import TDClient
 
 

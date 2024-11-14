@@ -17,6 +17,8 @@ import pandas as pd
 from twelvedata import TDClient
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
+from datetime import datetime, timedelta
+
 
 # Initialize Spark session
 spark = SparkSession.builder \
@@ -113,29 +115,70 @@ msft_curr = "higher" if msft10Day > msft40Day else "lower"
 
 # aaplPrice and msftPrice streams
 for t in range(100):
-    # request the next day of data for AAPL and MSFT
-    
+    # request the next day of data for AAPL and MSFT (starting with the first day after the most recent date in aligned_df)
+    latest_date = aligned_df.agg(F.max("Date")).collect()[0][0]
+    next_date = (datetime.strptime(latest_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+
+    new_aapl_price = td.time_series(symbol="AAPL", 
+                                    interval="1day", 
+                                    start_date=next_date, 
+                                    end_date=next_date).as_pandas().iloc[0]['close']
+    new_msft_price = td.time_series(symbol="MSFT", 
+                                    interval="1day", 
+                                    start_date=next_date, 
+                                    end_date=next_date).as_pandas().iloc[0]['close']
     
     # append the date and prices as a new row in aligned_df
+    new_aapl_price = td.time_series(symbol="AAPL", 
+                                    interval="1day", 
+                                    start_date=next_date, 
+                                    end_date=next_date).as_pandas().iloc[0]['close']
+    new_msft_price = td.time_series(symbol="MSFT", 
+                                    interval="1day", 
+                                    start_date=next_date, 
+                                    end_date=next_date).as_pandas().iloc[0]['close']
 
-    # calculate the updated 40 and 10 day averages for each and store them in the appropriate columns
+    new_row = spark.createDataFrame([(next_date, new_aapl_price, new_msft_price)], ["Date", "AAPL_price", "MSFT_price"])
+    aligned_df = aligned_df.union(new_row)
 
-    # update the values of latest_aapl10Day, latest_aapl40Day, latest_msft10Day, and latest_msft40Day
-
-    # if aapl_curr = "higher" and latest_aapl10Day < latest_aapl40Day
-        # print "<<date>> "sell aapl"
-        # set aapl_curr to "lower"
-    # elif aapl_curr = "lower" and latest_aapl10Day > latest_aapl40Day
-        # print "<<date>> "buy aapl"
-        # set aapl_curr to "higher"
-
-    # if msft_curr = "higher" and latest_msft10Day < latest_msft40Day
-        # print "<<date>> "sell msft"
-        # set msft_curr to "lower"
-    # elif msft_curr = "lower" and latest_msft10Day > latest_msft40Day
-        # print "<<date>> "buy msft"
-        # set msft_curr to "higher"
     
+    # calculate the updated 40 and 10 day averages for each and store them in the appropriate columns
+    window_spec_10 = Window.orderBy("Date").rowsBetween(-10, 0)
+    window_spec_40 = Window.orderBy("Date").rowsBetween(-40, 0)
+    
+    aligned_df = aligned_df \
+        .withColumn("AAPL_10_day_avg", F.avg("AAPL_price").over(window_spec_10)) \
+        .withColumn("AAPL_40_day_avg", F.avg("AAPL_price").over(window_spec_40)) \
+        .withColumn("MSFT_10_day_avg", F.avg("MSFT_price").over(window_spec_10)) \
+        .withColumn("MSFT_40_day_avg", F.avg("MSFT_price").over(window_spec_40))
+    
+    # update the values of latest_aapl10Day, latest_aapl40Day, latest_msft10Day, and latest_msft40Day
+    latest_averages = aligned_df.orderBy(F.desc("Date")).select(
+        "Date", "AAPL_10_day_avg", "AAPL_40_day_avg", "MSFT_10_day_avg", "MSFT_40_day_avg"
+    ).first()
+
+    latest_date_str = latest_averages["Date"]
+    latest_aapl10Day = latest_averages["AAPL_10_day_avg"]
+    latest_aapl40Day = latest_averages["AAPL_40_day_avg"]
+    latest_msft10Day = latest_averages["MSFT_10_day_avg"]
+    latest_msft40Day = latest_averages["MSFT_40_day_avg"]
+
+    # make the trading recommendations if appropriate
+    
+    if aapl_curr == "higher" and latest_aapl10Day < latest_aapl40Day:
+        print(f"{latest_date_str} sell aapl")
+        aapl_curr = "lower"
+    elif aapl_curr == "lower" and latest_aapl10Day > latest_aapl40Day:
+        print(f"{latest_date_str} buy aapl")
+        aapl_curr = "higher"
+
+    if msft_curr == "higher" and latest_msft10Day < latest_msft40Day:
+        print(f"{latest_date_str} sell msft")
+        msft_curr = "lower"
+    elif msft_curr == "lower" and latest_msft10Day > latest_msft40Day:
+        print(f"{latest_date_str} buy msft")
+        msft_curr = "higher"
+        
     time.sleep(15.0)
 
 exit(0)

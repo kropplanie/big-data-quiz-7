@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# !pip install pandas
+#!pip install pandas
 
 # Historical Daily Prices
-# !pip install finance-datareader
 
 import pandas as pd
 import time, datetime, sys
 import os, pathlib
 
-# Ref: https://github.com/FinanceData/FinanceDataReader#quick-start
-# import FinanceDataReader as fdr
-# updated to import twelvedata instead of FinanceDataReader
+
 import twelvedata
 
 from twelvedata import TDClient
@@ -27,8 +24,8 @@ symbols = ['AAPL', 'MSFT']
 stream_data = {}
 for sym in symbols:
     ts = td.time_series(symbol=ticker, 
-                        interval="4h", 
-                        start_date= "2020-01-01").as_pandas()
+                        interval="1day", 
+                        start_date= "2024-10-4").as_pandas()
     stream_data[sym] = ts
 
 sys.stdout.reconfigure(encoding='utf-8')
@@ -42,7 +39,18 @@ tech_df.columns = [sym for sym in symbols]
 dates = tech_df.index.rename('Date')
 init_date = list(dates)[0]
 last_hist_date = list(dates)[-1]
+tech_df = pd.concat(stream_data, axis=1)
+tech_df.columns = [f"{sym}_price" for sym in symbols]  # Rename columns for clarity
 
+# Calculate the moving averages
+for sym in symbols:
+    if sym = 'AAPL':
+        aapl10day = tech_df[f"{sym}_price"].rolling(window=10).mean()
+        aapl40day = tech_df[f"{sym}_price"].rolling(window=40).mean()
+    elif sym = 'MSFT':
+        msft10day = tech_df[f"{sym}_price"].rolling(window=10).mean()
+        msft40day = tech_df[f"{sym}_price"].rolling(window=40).mean()
+    
 
 init_delay_seconds = 30
 interval = 5
@@ -54,7 +62,7 @@ tech_df['scaledMSFT'] = msft*scaler
 # print (tech_df[0:3])
 
 print ('Sending daily AAPL and MSFT prices from %10s to %10s ...' % (str(init_date)[:10], str(last_hist_date)[:10]), flush=True, file=sys.stderr)
-print ("... each day's data sent every %d hours ..." % (interval), flush=True, file=sys.stderr)
+print ("... each day's data sent every day ..." % (interval), flush=True, file=sys.stderr)
 print ("... MSFT prices adjusted to match AAPL prices on %10s ..."  % (init_date), flush=True, file=sys.stderr)
 
 from tqdm import tqdm

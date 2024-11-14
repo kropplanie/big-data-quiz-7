@@ -8,7 +8,7 @@
 import pandas as pd
 import time, datetime, sys
 import os, pathlib
-
+import nltk
 
 import twelvedata
 

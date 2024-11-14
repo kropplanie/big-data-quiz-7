@@ -56,18 +56,18 @@ spark_df = spark.createDataFrame(tech_df)
 
 # make a dataframe with the correct dates
 start_date = "2024-01-01"
-latest_date = spark_df.agg(F.max("Date")).collect()[0][0]date_range = spark.range(0, (datetime.strptime(end_date, '%Y-%m-%d') - datetime.strptime(start_date, '%Y-%m-%d')).days + 1) \
-    .withColumn("Date", F.expr(f"date_add('{start_date}', id)")) \
-    .select("Date")
-date_range = spark.range(0, (latest_date - datetime.strptime(start_date, '%Y-%m-%d')).days + 1) \
+latest_date = spark_df.agg(F.max("Date")).collect()[0][0]
+
+date_range = spark.range(0, (datetime.strptime(str(latest_date), '%Y-%m-%d') - datetime.strptime(start_date, '%Y-%m-%d')).days + 1) \
     .withColumn("Date", F.expr(f"date_add('{start_date}', id)")) \
     .select("Date")
 
-aapl_df = spark_df.select("Date", "AAPL_price").join(date_range, on="Date", how="right") # join the stock data with the correct dates
+aapl_df = spark_df.select("Date", "AAPL_price").join(date_range, on="Date", how="right")  # join the stock data with the correct dates
 msft_df = spark_df.select("Date", "MSFT_price").join(date_range, on="Date", how="right")
 
 # joing the two dataframes on the date column
 aligned_df = aapl_df.join(msft_df, on="Date", how="outer").orderBy("Date")
+
 
 # forward fill nulls
 window_spec = Window.orderBy("Date").rowsBetween(-1, 0)
@@ -82,29 +82,19 @@ aligned_df = aligned_df \
 window_spec_40 = Window.orderBy("Date").rowsBetween(-40, 0)  # 40-day window
 window_spec_10 = Window.orderBy("Date").rowsBetween(-10, 0)  # 10-day window
 
-# add the 40-day and 10-day moving averages for each stock
-aligned_df = spark_df.withColumn("aapl40Day", F.avg("AAPL_price").over(window_spec_40))
-aligned_df = spark_df.withColumn("msft40Day", F.avg("MSFT_price").over(window_spec_40))
+aligned_df = aligned_df \
+    .withColumn("aapl10Day", F.avg("AAPL_price").over(window_spec_10)) \
+    .withColumn("aapl40Day", F.avg("AAPL_price").over(window_spec_40)) \
+    .withColumn("msft10Day", F.avg("MSFT_price").over(window_spec_10)) \
+    .withColumn("msft40Day", F.avg("MSFT_price").over(window_spec_40))
 
-aligned_df = spark_df.withColumn("aapl10Day", F.avg("AAPL_price").over(window_spec_10))
-aligned_df = spark_df.withColumn("msft10Day", F.avg("MSFT_price").over(window_spec_10))
-
-
-
-# get the most recent values of the averages
+# check the most recent relationship between the 10 and 40 day averages
 latest_averages = aligned_df.orderBy(F.desc("Date")).select(
-    "aapl10Day", "aapl40Day", "msft10Day", "msft40Day"
+    "AAPL_10_day_avg", "AAPL_40_day_avg", "MSFT_10_day_avg", "MSFT_40_day_avg"
 ).first()
 
-latest_aapl10Day = latest_averages["aapl10Day"]
-latest_aapl40Day = latest_averages["aapl40Day"]
-latest_msft10Day = latest_averages["msft10Day"]
-latest_msft40Day = latest_averages["msft40Day"]
-
-# set tracker variables based on the comparison of the 10 day and 40 day averages
-aapl_curr = "higher" if aapl10Day > aapl40Day else "lower"
-msft_curr = "higher" if msft10Day > msft40Day else "lower"
-
+aapl_curr = "higher" if latest_averages["AAPL_10_day_avg"] > latest_averages["AAPL_40_day_avg"] else "lower"
+msft_curr = "higher" if latest_averages["MSFT_10_day_avg"] > latest_averages["MSFT_40_day_avg"] else "lower"
 
 # Real Time Prices
 # Eventually we want to make it a day trading platform in the spirit of 
@@ -117,51 +107,32 @@ msft_curr = "higher" if msft10Day > msft40Day else "lower"
 for t in range(100):
     # request the next day of data for AAPL and MSFT (starting with the first day after the most recent date in aligned_df)
     latest_date = aligned_df.agg(F.max("Date")).collect()[0][0]
-    next_date = (datetime.strptime(latest_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
-
-    new_aapl_price = td.time_series(symbol="AAPL", 
-                                    interval="1day", 
-                                    start_date=next_date, 
-                                    end_date=next_date).as_pandas().iloc[0]['close']
-    new_msft_price = td.time_series(symbol="MSFT", 
-                                    interval="1day", 
-                                    start_date=next_date, 
-                                    end_date=next_date).as_pandas().iloc[0]['close']
+    next_date = (datetime.strptime(str(latest_date), "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+    #added a try statement due to some errors in previous runs
+    try: #added a try statement due to some errors in previous runs
+        new_aapl_price = td.time_series(symbol="AAPL", interval="1day", start_date=next_date, end_date=next_date).as_pandas().iloc[0]['close']
+        new_msft_price = td.time_series(symbol="MSFT", interval="1day", start_date=next_date, end_date=next_date).as_pandas().iloc[0]['close']
+    except Exception as e:
+        print(f"Error fetching data: {e}")
+        continue
     
     # append the date and prices as a new row in aligned_df
-    new_aapl_price = td.time_series(symbol="AAPL", 
-                                    interval="1day", 
-                                    start_date=next_date, 
-                                    end_date=next_date).as_pandas().iloc[0]['close']
-    new_msft_price = td.time_series(symbol="MSFT", 
-                                    interval="1day", 
-                                    start_date=next_date, 
-                                    end_date=next_date).as_pandas().iloc[0]['close']
-
     new_row = spark.createDataFrame([(next_date, new_aapl_price, new_msft_price)], ["Date", "AAPL_price", "MSFT_price"])
     aligned_df = aligned_df.union(new_row)
 
     
     # calculate the updated 40 and 10 day averages for each and store them in the appropriate columns
-    window_spec_10 = Window.orderBy("Date").rowsBetween(-10, 0)
-    window_spec_40 = Window.orderBy("Date").rowsBetween(-40, 0)
-    
     aligned_df = aligned_df \
-        .withColumn("AAPL_10_day_avg", F.avg("AAPL_price").over(window_spec_10)) \
-        .withColumn("AAPL_40_day_avg", F.avg("AAPL_price").over(window_spec_40)) \
-        .withColumn("MSFT_10_day_avg", F.avg("MSFT_price").over(window_spec_10)) \
-        .withColumn("MSFT_40_day_avg", F.avg("MSFT_price").over(window_spec_40))
+        .withColumn("aapl10Day", F.avg("AAPL_price").over(window_spec_10)) \
+        .withColumn("aapl40Day", F.avg("AAPL_price").over(window_spec_40)) \
+        .withColumn("msft10Day", F.avg("MSFT_price").over(window_spec_10)) \
+        .withColumn("msft40Day", F.avg("MSFT_price").over(window_spec_40))
+
     
     # update the values of latest_aapl10Day, latest_aapl40Day, latest_msft10Day, and latest_msft40Day
     latest_averages = aligned_df.orderBy(F.desc("Date")).select(
-        "Date", "AAPL_10_day_avg", "AAPL_40_day_avg", "MSFT_10_day_avg", "MSFT_40_day_avg"
+        "Date", "aapl10Day", "aapl40Day", "msft10Day", "msft40Day"
     ).first()
-
-    latest_date_str = latest_averages["Date"]
-    latest_aapl10Day = latest_averages["AAPL_10_day_avg"]
-    latest_aapl40Day = latest_averages["AAPL_40_day_avg"]
-    latest_msft10Day = latest_averages["MSFT_10_day_avg"]
-    latest_msft40Day = latest_averages["MSFT_40_day_avg"]
 
     # make the trading recommendations if appropriate
     

@@ -39,7 +39,7 @@ symbols = ['AAPL', 'MSFT']
 stream_data = {}
 for sym in symbols:
     symbol_data = []  # list to store the data for the current symbol
-    
+    start_date = "2024-01-01"
     # Loop through the 40 days, requesting one day of data at a time
     for i in range(40):
         ts = td.time_series(symbol=sym, 

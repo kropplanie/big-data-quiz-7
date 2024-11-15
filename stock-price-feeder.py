@@ -40,12 +40,12 @@ stream_data = {}
 for sym in symbols:
     print(f"(starting data collection for {sym}")
     symbol_data = []  # list to store the data for the current symbol
-    set_start_date = "2023-01-03"
     # Loop through the 40 days, requesting one day of data at a time
     try:
         ts = td.time_series(symbol=sym, 
                             interval="1day", 
-                            start_date=set_start_date,
+                            start_date="2023-01-03",
+                            end_date="2023-03-04",
                             outputsize=40).as_pandas()
         print(ts)
         symbol_data.append(ts[['close']])  # append just the 'close' column data

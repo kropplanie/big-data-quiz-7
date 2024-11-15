@@ -59,9 +59,9 @@ spark_df = spark.createDataFrame(tech_df)
 
 # make a dataframe with the correct dates
 start_date = "2024-01-01"
-latest_date = spark_df.agg(F.max("Date")).collect()[0][0]
+latest_date = str(latest_date).split(' ')[0]  # Get only the date part
 
-date_range = spark.range(0, (datetime.strptime(str(latest_date), '%Y-%m-%d') - datetime.strptime(start_date, '%Y-%m-%d')).days + 1) \
+date_range = spark.range(0, (datetime.strptime(latest_date, '%Y-%m-%d') - datetime.strptime(start_date, '%Y-%m-%d')).days + 1) \
     .withColumn("Date", F.expr(f"date_add('{start_date}', id)")) \
     .select("Date")
 
@@ -109,7 +109,7 @@ msft_curr = "higher" if latest_averages["msft10Day"] > latest_averages["msft40Da
 # aaplPrice and msftPrice streams
 for t in range(100):
     # request the next day of data for AAPL and MSFT (starting with the first day after the most recent date in aligned_df)
-    latest_date = aligned_df.agg(F.max("Date")).collect()[0][0]
+    latest_date = str(latest_date).split(' ')[0]  # Get only the date part
     next_date = (datetime.strptime(str(latest_date), "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
     #added a try statement due to some errors in previous runs
     try: #added a try statement due to some errors in previous runs

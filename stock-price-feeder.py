@@ -56,6 +56,7 @@ for sym in symbols:
         # Update the start_date to the next day after the last request
         set_start_date = pd.to_datetime(set_start_date) + pd.Timedelta(days=1)
         set_start_date = set_start_date.strftime("%Y-%m-%d")
+        print(set_start_date)
     
     # after collecting the 40 days of data, concatenate the list into a single DataFrame
     full_data = pd.concat(symbol_data)

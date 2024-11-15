@@ -39,12 +39,12 @@ symbols = ['AAPL', 'MSFT']
 stream_data = {}
 for sym in symbols:
     symbol_data = []  # list to store the data for the current symbol
-    start_date = "2024-01-01"
+    set_start_date = "2024-01-01"
     # Loop through the 40 days, requesting one day of data at a time
     for i in range(40):
         ts = td.time_series(symbol=sym, 
                             interval="1day", 
-                            start_date=start_date,
+                            start_date=set_start_date,
                             outputsize=1).as_pandas()
         symbol_data.append(ts[['close']])  # append just the 'close' column data
         
@@ -52,8 +52,8 @@ for sym in symbols:
         time.sleep(15)
 
         # Update the start_date to the next day after the last request
-        start_date = pd.to_datetime(start_date) + pd.Timedelta(days=1)
-        start_date = start_date.strftime("%Y-%m-%d")
+        set_start_date = pd.to_datetime(set_start_date) + pd.Timedelta(days=1)
+        set_start_date = set_start_date.strftime("%Y-%m-%d")
     
     # after collecting the 40 days of data, concatenate the list into a single DataFrame
     full_data = pd.concat(symbol_data)

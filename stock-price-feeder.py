@@ -65,7 +65,7 @@ latest_date = spark_df.agg(F.max("Date")).collect()[0][0]
 latest_date = str(latest_date).split(' ')[0]  # Get only the date part
 
 date_range = spark.range(0, (datetime.strptime(str(latest_date), '%Y-%m-%d') - datetime.strptime(start_date, '%Y-%m-%d')).days + 1) \
-    .withColumn("Date", F.expr(f"date_add(date('{start_date}'), cast(id as int))")) \
+    .withColumn("Date", F.expr(f"date_add('{start_date}', cast(id as int))")) \
     .select("Date")
 
 aapl_df = spark_df.select("Date", "AAPL_price").join(date_range, on="Date", how="right")  # join the stock data with the correct dates

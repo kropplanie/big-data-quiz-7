@@ -38,12 +38,28 @@ td = TDClient(apikey=api_key)
 symbols = ['AAPL', 'MSFT']
 stream_data = {}
 for sym in symbols:
-    ts = td.time_series(symbol=sym, 
-                        interval="1day", 
-                        start_date= "2024-01-01",
-                        outputsize=40).as_pandas()
-    time.sleep(25)
-    stream_data[sym] = ts[['close']].rename(columns={'close': f"{sym}_price"})
+    symbol_data = []  # list to store the data for the current symbol
+    
+    # Loop through the 40 days, requesting one day of data at a time
+    for i in range(days_to_request):
+        ts = td.time_series(symbol=sym, 
+                            interval="1day", 
+                            start_date=start_date,
+                            outputsize=1).as_pandas()
+        symbol_data.append(ts[['close']])  # append just the 'close' column data
+        
+        # wait 15 seconds before the next request to avoid hitting api credit limit
+        time.sleep(15)
+
+        # Update the start_date to the next day after the last request
+        start_date = pd.to_datetime(start_date) + pd.Timedelta(days=1)
+        start_date = start_date.strftime("%Y-%m-%d")
+    
+    # after collecting the 40 days of data, concatenate the list into a single DataFrame
+    full_data = pd.concat(symbol_data)
+    
+    # rename the 'close' column for the symbol and store it in the stream_data dictionary
+    stream_data[sym] = full_data.rename(columns={'close': f"{sym}_price"})
 
 sys.stdout.reconfigure(encoding='utf-8')
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))

@@ -133,12 +133,14 @@ for t in range(100):
     latest_date = aligned_df.agg(F.max("Date")).collect()[0][0]
     latest_date = str(latest_date).split(' ')[0]  # Get only the date part
     next_date = (datetime.strptime(str(latest_date), "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+    print("Requesting data")
     #added a try statement due to some errors in previous runs
     try: #added a try statement due to some errors in previous runs
-        new_aapl_price = td.time_series(symbol="AAPL", interval="1day", start_date=next_date, end_date=next_date).as_pandas().iloc[0]['close']
-        new_msft_price = td.time_series(symbol="MSFT", interval="1day", start_date=next_date, end_date=next_date).as_pandas().iloc[0]['close']
+        new_aapl_price = td.time_series(symbol="AAPL", interval="1day", start_date=next_date, outputsize=1).as_pandas().iloc[0]['close']
+        new_msft_price = td.time_series(symbol="MSFT", interval="1day", start_date=next_date, outputsize=1).as_pandas().iloc[0]['close']
     except Exception as e:
         print(f"Error fetching data: {e}")
+        time.sleep(15)
         continue
     
     # append the date and prices as a new row in aligned_df
@@ -177,6 +179,6 @@ for t in range(100):
     else: 
         print('No trade recommended')
         
-    time.sleep(25.0)
+    time.sleep(15.0)
 
 exit(0)

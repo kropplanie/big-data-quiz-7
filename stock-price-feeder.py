@@ -40,7 +40,7 @@ stream_data = {}
 for sym in symbols:
     print(f"(starting data collection for {sym}")
     symbol_data = []  # list to store the data for the current symbol
-    set_start_date = "2024-01-01"
+    set_start_date = "2023-01-03"
     # Loop through the 40 days, requesting one day of data at a time
     for i in range(40):
         try:
@@ -73,6 +73,9 @@ sys.stdout.reconfigure(encoding='utf-8')
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 # print (sys.path, file=sys.stderr)
 
+print(f"AAPL Data:\n{stream_data['AAPL'].head()}")
+print(f"MSFT Data:\n{stream_data['MSFT'].head()}")
+
 # convert dictionary to a pandas dataframe and then a spark dataframe
 tech_df = pd.concat(stream_data.values(), axis=1)
 tech_df['Date'] = tech_df.index
@@ -84,7 +87,7 @@ spark_df = spark.createDataFrame(tech_df)
 
 
 # make a dataframe with the correct dates
-start_date = "2024-01-01"
+start_date = "2023-01-03"
 latest_date = spark_df.agg(F.max("Date")).collect()[0][0]
 latest_date = str(latest_date).split(' ')[0]  # Get only the date part
 
@@ -126,66 +129,5 @@ print(f"(latest_averages:{latest_averages})")
 aapl_curr = "higher" if latest_averages["aapl10Day"] > latest_averages["aapl40Day"] else "lower"
 msft_curr = "higher" if latest_averages["msft10Day"] > latest_averages["msft40Day"] else "lower"
 
-
-# Real Time Prices
-# Eventually we want to make it a day trading platform in the spirit of 
-# https://www.investopedia.com/articles/trading/05/011705.asp
-# !pip install yahoo_fin
-# this version isn't actually real-time prices because we wouldn't get enough examples of when 
-
-print("starting live data stream simulation")
-# aaplPrice and msftPrice streams
-for t in range(100):
-    # request the next day of data for AAPL and MSFT (starting with the first day after the most recent date in aligned_df)
-    latest_date = aligned_df.agg(F.max("Date")).collect()[0][0]
-    latest_date = str(latest_date).split(' ')[0]  # Get only the date part
-    next_date = (datetime.strptime(str(latest_date), "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
-    print("Requesting data for {next_date}")
-    #added a try statement due to some errors in previous runs
-    try: #added a try statement due to some errors in previous runs
-        new_aapl_price = td.time_series(symbol="AAPL", interval="1day", start_date=next_date, outputsize=1).as_pandas().iloc[0]['close']
-        new_msft_price = td.time_series(symbol="MSFT", interval="1day", start_date=next_date, outputsize=1).as_pandas().iloc[0]['close']
-    except Exception as e:
-        print(f"Error fetching data: {e}")
-        time.sleep(15)
-        continue
-    
-    # append the date and prices as a new row in aligned_df
-    new_row = spark.createDataFrame([(next_date, new_aapl_price, new_msft_price)], ["Date", "AAPL_price", "MSFT_price"])
-    aligned_df = aligned_df.union(new_row)
-
-    
-    # calculate the updated 40 and 10 day averages for each and store them in the appropriate columns
-    aligned_df = aligned_df \
-        .withColumn("aapl10Day", F.avg("AAPL_price").over(window_spec_10)) \
-        .withColumn("aapl40Day", F.avg("AAPL_price").over(window_spec_40)) \
-        .withColumn("msft10Day", F.avg("MSFT_price").over(window_spec_10)) \
-        .withColumn("msft40Day", F.avg("MSFT_price").over(window_spec_40))
-
-    
-    # update the values of latest_aapl10Day, latest_aapl40Day, latest_msft10Day, and latest_msft40Day
-    latest_averages = aligned_df.orderBy(F.desc("Date")).select("aapl10Day", "aapl40Day", "msft10Day", "msft40Day").first()
-    
-    # make the trading recommendations if appropriate
-    
-    if aapl_curr == "higher" and latest_averages["aapl10Day"] < latest_averages["aapl40Day"]:
-        print(f"{latest_averages['Date'].strftime('%Y-%m-%d')} sell aapl")
-        aapl_curr = "lower"
-    elif aapl_curr == "lower" and latest_averages["aapl10Day"] > latest_averages["aapl40Day"]:
-        print(f"{latest_averages['Date'].strftime('%Y-%m-%d')} buy aapl")
-        aapl_curr = "higher"
-    else: 
-        print('No trade recommended')
-
-    if msft_curr == "higher" and latest_averages["msft10Day"] < latest_averages["msft40Day"]:
-        print(f"{latest_averages['Date'].strftime('%Y-%m-%d')} sell msft")
-        msft_curr = "lower"
-    elif msft_curr == "lower" and latest_averages["msft10Day"] > latest_averages["msft40Day"]:
-        print(f"{latest_averages['Date'].strftime('%Y-%m-%d')} buy msft")
-        msft_curr = "higher"
-    else: 
-        print('No trade recommended')
-        
-    time.sleep(15.0)
 
 exit(0)

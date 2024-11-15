@@ -68,7 +68,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 
 print(f"AAPL Data:\n{stream_data['AAPL'].head()}")
 print(f"MSFT Data:\n{stream_data['MSFT'].head()}")
-"""
+
 # convert dictionary to a pandas dataframe and then a spark dataframe
 tech_df = pd.concat(stream_data.values(), axis=1)
 tech_df['Date'] = tech_df.index
@@ -123,4 +123,4 @@ aapl_curr = "higher" if latest_averages["aapl10Day"] > latest_averages["aapl40Da
 msft_curr = "higher" if latest_averages["msft10Day"] > latest_averages["msft40Day"] else "lower"
 
 
-exit(0)"""
+exit(0)

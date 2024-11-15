@@ -43,11 +43,16 @@ for sym in symbols:
     set_start_date = "2024-01-01"
     # Loop through the 40 days, requesting one day of data at a time
     for i in range(60):
-        ts = td.time_series(symbol=sym, 
-                            interval="1day", 
-                            start_date=set_start_date,
-                            outputsize=1).as_pandas()
-        symbol_data.append(ts[['close']])  # append just the 'close' column data
+        try:
+            ts = td.time_series(symbol=sym, 
+                                interval="1day", 
+                                start_date=set_start_date,
+                                outputsize=1).as_pandas()
+            symbol_data.append(ts[['close']])  # append just the 'close' column data
+        except Exception as e:
+        print(f"Error fetching data: {e}")
+        time.sleep(15)
+        continue
         
         # wait 15 seconds before the next request to avoid hitting api credit limit
         print('Next iteration in 15 seconds')

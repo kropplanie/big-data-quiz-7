@@ -54,15 +54,8 @@ for sym in symbols:
         time.sleep(10)
         continue
     
-    # wait 15 seconds before the next request to avoid hitting api credit limit
-    print('Next iteration in 10 seconds')
     time.sleep(10)
-
-    # Update the start_date to the next day after the last request
-    set_start_date = pd.to_datetime(set_start_date) + pd.Timedelta(days=1)
-    set_start_date = set_start_date.strftime("%Y-%m-%d")
-    print(set_start_date)
-    """
+    
     # after collecting the 40 days of data, concatenate the list into a single DataFrame
     full_data = pd.concat(symbol_data)
     
@@ -75,7 +68,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 
 print(f"AAPL Data:\n{stream_data['AAPL'].head()}")
 print(f"MSFT Data:\n{stream_data['MSFT'].head()}")
-
+"""
 # convert dictionary to a pandas dataframe and then a spark dataframe
 tech_df = pd.concat(stream_data.values(), axis=1)
 tech_df['Date'] = tech_df.index

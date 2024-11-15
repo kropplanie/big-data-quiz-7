@@ -133,7 +133,7 @@ for t in range(100):
     latest_date = aligned_df.agg(F.max("Date")).collect()[0][0]
     latest_date = str(latest_date).split(' ')[0]  # Get only the date part
     next_date = (datetime.strptime(str(latest_date), "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
-    print("Requesting data")
+    print("Requesting data for {next_date}")
     #added a try statement due to some errors in previous runs
     try: #added a try statement due to some errors in previous runs
         new_aapl_price = td.time_series(symbol="AAPL", interval="1day", start_date=next_date, outputsize=1).as_pandas().iloc[0]['close']

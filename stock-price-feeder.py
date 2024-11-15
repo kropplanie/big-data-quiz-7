@@ -48,6 +48,7 @@ for sym in symbols:
                                 interval="1day", 
                                 start_date=set_start_date,
                                 outputsize=1).as_pandas()
+            print(ts)
             symbol_data.append(ts[['close']])  # append just the 'close' column data
         except Exception as e:
             print(f"Error fetching data: {e}")
@@ -62,7 +63,7 @@ for sym in symbols:
         set_start_date = pd.to_datetime(set_start_date) + pd.Timedelta(days=1)
         set_start_date = set_start_date.strftime("%Y-%m-%d")
         print(set_start_date)
-    
+    """
     # after collecting the 40 days of data, concatenate the list into a single DataFrame
     full_data = pd.concat(symbol_data)
     
@@ -130,4 +131,4 @@ aapl_curr = "higher" if latest_averages["aapl10Day"] > latest_averages["aapl40Da
 msft_curr = "higher" if latest_averages["msft10Day"] > latest_averages["msft40Day"] else "lower"
 
 
-exit(0)
+exit(0)"""

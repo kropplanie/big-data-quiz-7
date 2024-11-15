@@ -42,15 +42,14 @@ for sym in symbols:
                         interval="1day", 
                         start_date= "2024-01-01",
                         outputsize=40).as_pandas()
-    stream_data[sym] = ts
+    stream_data[sym] = ts[['close']].rename(columns={'close': f"{sym}_price"})
 
 sys.stdout.reconfigure(encoding='utf-8')
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 # print (sys.path, file=sys.stderr)
 
 # convert dictionary to a pandas dataframe and then a spark dataframe
-tech_df = pd.concat(stream_data, axis=1)
-tech_df.columns = [f"{sym}_price" for sym in symbols]
+tech_df = pd.concat(stream_data.values(), axis=1)
 tech_df['Date'] = tech_df.index
 tech_df = tech_df[['Date', 'AAPL_price', 'MSFT_price']]
 spark_df = spark.createDataFrame(tech_df)

@@ -49,6 +49,7 @@ for sym in symbols:
         symbol_data.append(ts[['close']])  # append just the 'close' column data
         
         # wait 15 seconds before the next request to avoid hitting api credit limit
+        print('Next iteration in 15 seconds')
         time.sleep(15)
 
         # Update the start_date to the next day after the last request
@@ -162,17 +163,18 @@ for t in range(100):
         aapl_curr = "lower"
     elif aapl_curr == "lower" and latest_averages["aapl10Day"] > latest_averages["aapl40Day"]:
         print(f"{latest_averages['Date'].strftime('%Y-%m-%d')} buy aapl")
-
         aapl_curr = "higher"
+    else: 
+        print('No trade recommended')
 
     if msft_curr == "higher" and latest_averages["msft10Day"] < latest_averages["msft40Day"]:
         print(f"{latest_averages['Date'].strftime('%Y-%m-%d')} sell msft")
-
         msft_curr = "lower"
     elif msft_curr == "lower" and latest_averages["msft10Day"] > latest_averages["msft40Day"]:
         print(f"{latest_averages['Date'].strftime('%Y-%m-%d')} buy msft")
-
         msft_curr = "higher"
+    else: 
+        print('No trade recommended')
         
     time.sleep(25.0)
 

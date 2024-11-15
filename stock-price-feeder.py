@@ -97,7 +97,7 @@ msft_df = spark_df.select("Date", "MSFT_price").join(date_range, on="Date", how=
 
 # joing the two dataframes on the date column
 aligned_df = aapl_df.join(msft_df, on="Date", how="outer").orderBy("Date")
-
+print(aligned_df.head(3))
 
 # forward fill nulls
 window_spec = Window.orderBy("Date").rowsBetween(-1, 0)
@@ -121,6 +121,7 @@ aligned_df = aligned_df \
 # check the most recent relationship between the 10 and 40 day averages
 latest_averages = aligned_df.orderBy(F.desc("Date")).select("aapl10Day", "aapl40Day", "msft10Day", "msft40Day").first()
 
+print(f"(latest_averages:{latest_averages})")
 
 aapl_curr = "higher" if latest_averages["aapl10Day"] > latest_averages["aapl40Day"] else "lower"
 msft_curr = "higher" if latest_averages["msft10Day"] > latest_averages["msft40Day"] else "lower"

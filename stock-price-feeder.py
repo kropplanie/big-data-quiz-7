@@ -51,12 +51,12 @@ for sym in symbols:
             symbol_data.append(ts[['close']])  # append just the 'close' column data
         except Exception as e:
             print(f"Error fetching data: {e}")
-            time.sleep(15)
+            time.sleep(10)
             continue
         
         # wait 15 seconds before the next request to avoid hitting api credit limit
-        print('Next iteration in 15 seconds')
-        time.sleep(15)
+        print('Next iteration in 10 seconds')
+        time.sleep(10)
 
         # Update the start_date to the next day after the last request
         set_start_date = pd.to_datetime(set_start_date) + pd.Timedelta(days=1)

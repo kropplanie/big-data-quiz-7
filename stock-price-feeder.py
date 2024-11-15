@@ -41,7 +41,7 @@ for sym in symbols:
     symbol_data = []  # list to store the data for the current symbol
     
     # Loop through the 40 days, requesting one day of data at a time
-    for i in range(days_to_request):
+    for i in range(40):
         ts = td.time_series(symbol=sym, 
                             interval="1day", 
                             start_date=start_date,

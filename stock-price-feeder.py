@@ -100,14 +100,14 @@ msft_df = spark_df.select("Date", "MSFT_price").join(date_range, on="Date", how=
 
 # joing the two dataframes on the date column
 aligned_df = aapl_df.join(msft_df, on="Date", how="outer").orderBy("Date")
-print(aligned_df.head(3))
+
 
 # forward fill nulls
 window_spec = Window.orderBy("Date").rowsBetween(-1, 0)
 aligned_df = aligned_df \
     .withColumn("AAPL_price", F.last("AAPL_price", ignorenulls=True).over(window_spec)) \
     .withColumn("MSFT_price", F.last("MSFT_price", ignorenulls=True).over(window_spec))
-
+print(aligned_df.head(10))
 
 # calculate the values for the moving averages and add a column to track them
 

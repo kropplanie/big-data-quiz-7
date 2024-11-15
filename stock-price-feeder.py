@@ -50,9 +50,9 @@ for sym in symbols:
                                 outputsize=1).as_pandas()
             symbol_data.append(ts[['close']])  # append just the 'close' column data
         except Exception as e:
-        print(f"Error fetching data: {e}")
-        time.sleep(15)
-        continue
+            print(f"Error fetching data: {e}")
+            time.sleep(15)
+            continue
         
         # wait 15 seconds before the next request to avoid hitting api credit limit
         print('Next iteration in 15 seconds')

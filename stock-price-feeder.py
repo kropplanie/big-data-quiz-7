@@ -69,6 +69,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 print(f"AAPL Data:\n{stream_data['AAPL'].head()}")
 print(f"MSFT Data:\n{stream_data['MSFT'].head()}")
 
+print("converting to pandas dataframe")
 # convert dictionary to a pandas dataframe and then a spark dataframe
 tech_df = pd.concat(stream_data.values(), axis=1)
 tech_df['Date'] = tech_df.index
@@ -78,7 +79,7 @@ spark_df = spark.createDataFrame(tech_df)
 
 # align the dates for the two stocks
 
-
+print("making dates dataframe")
 # make a dataframe with the correct dates
 start_date = "2023-01-03"
 latest_date = spark_df.agg(F.max("Date")).collect()[0][0]
@@ -88,13 +89,14 @@ date_range = spark.range(0, (datetime.strptime(str(latest_date), '%Y-%m-%d') - d
     .withColumn("Date", F.expr(f"date_add('{start_date}', cast(id as int))")) \
     .select("Date")
 
+print("joining on the date column")
 aapl_df = spark_df.select("Date", "AAPL_price").join(date_range, on="Date", how="right")  # join the stock data with the correct dates
 msft_df = spark_df.select("Date", "MSFT_price").join(date_range, on="Date", how="right")
 
 # joing the two dataframes on the date column
 aligned_df = aapl_df.join(msft_df, on="Date", how="outer").orderBy("Date")
 
-
+print("filling forward")
 # forward fill nulls
 window_spec = Window.orderBy("Date").rowsBetween(-1, 0)
 aligned_df = aligned_df \
@@ -108,6 +110,7 @@ print(aligned_df.head(10))
 window_spec_40 = Window.orderBy("Date").rowsBetween(-40, 0)  # 40-day window (last 40 rows)
 window_spec_10 = Window.orderBy("Date").rowsBetween(-10, 0)  # 10-day window (last 10 rows)
 
+print("calculating moving averages")
 aligned_df = aligned_df \
     .withColumn("aapl10Day", F.avg("AAPL_price").over(window_spec_10)) \
     .withColumn("aapl40Day", F.avg("AAPL_price").over(window_spec_40)) \

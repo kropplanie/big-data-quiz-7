@@ -13,7 +13,6 @@ import nltk
 import twelvedata
 
 from pyspark.sql import SparkSession
-import pandas as pd
 from twelvedata import TDClient
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
@@ -27,14 +26,17 @@ spark = SparkSession.builder \
 
 
 ######### NEED TO UPDATE TO GET API_KEY FROM SOMEWHERE SECURE ##############
-api_key = sys.argv[1]
-td = TDClient(apikey=api_key)
+import os
+api_key = os.getenv("TWELVE_DATA_API_KEY")
+if not api_key:
+    print("API key is missing!")
+    sys.exit(1)td = TDClient(apikey=api_key)
 
 # request the data from twelvedata and store it in a dictionary with a key for each stock
 symbols = ['AAPL', 'MSFT']
 stream_data = {}
 for sym in symbols:
-    ts = td.time_series(symbol=ticker, 
+    ts = td.time_series(symbol=sym, 
                         interval="1day", 
                         start_date= "2024-01-01",
                         outputsize=40).as_pandas()
@@ -79,8 +81,8 @@ aligned_df = aligned_df \
 # calculate the values for the moving averages and add a column to track them
 
 # Define the window spec to calculate the moving averages
-window_spec_40 = Window.orderBy("Date").rowsBetween(-40, 0)  # 40-day window
-window_spec_10 = Window.orderBy("Date").rowsBetween(-10, 0)  # 10-day window
+window_spec_40 = Window.orderBy("Date").rowsBetween(-40, 0)  # 40-day window (last 40 rows)
+window_spec_10 = Window.orderBy("Date").rowsBetween(-10, 0)  # 10-day window (last 10 rows)
 
 aligned_df = aligned_df \
     .withColumn("aapl10Day", F.avg("AAPL_price").over(window_spec_10)) \
@@ -89,12 +91,12 @@ aligned_df = aligned_df \
     .withColumn("msft40Day", F.avg("MSFT_price").over(window_spec_40))
 
 # check the most recent relationship between the 10 and 40 day averages
-latest_averages = aligned_df.orderBy(F.desc("Date")).select(
-    "AAPL_10_day_avg", "AAPL_40_day_avg", "MSFT_10_day_avg", "MSFT_40_day_avg"
-).first()
+latest_averages = aligned_df.orderBy(F.desc("Date")).select("aapl10Day", "aapl40Day", "msft10Day", "msft40Day").first()
 
-aapl_curr = "higher" if latest_averages["AAPL_10_day_avg"] > latest_averages["AAPL_40_day_avg"] else "lower"
-msft_curr = "higher" if latest_averages["MSFT_10_day_avg"] > latest_averages["MSFT_40_day_avg"] else "lower"
+
+aapl_curr = "higher" if latest_averages["aapl10Day"] > latest_averages["aapl40Day"] else "lower"
+msft_curr = "higher" if latest_averages["msft10Day"] > latest_averages["msft40Day"] else "lower"
+
 
 # Real Time Prices
 # Eventually we want to make it a day trading platform in the spirit of 
@@ -130,24 +132,25 @@ for t in range(100):
 
     
     # update the values of latest_aapl10Day, latest_aapl40Day, latest_msft10Day, and latest_msft40Day
-    latest_averages = aligned_df.orderBy(F.desc("Date")).select(
-        "Date", "aapl10Day", "aapl40Day", "msft10Day", "msft40Day"
-    ).first()
-
+    latest_averages = aligned_df.orderBy(F.desc("Date")).select("aapl10Day", "aapl40Day", "msft10Day", "msft40Day").first()
+    
     # make the trading recommendations if appropriate
     
-    if aapl_curr == "higher" and latest_aapl10Day < latest_aapl40Day:
-        print(f"{latest_date_str} sell aapl")
+    if aapl_curr == "higher" and latest_averages["aapl10Day"] < latest_averages["aapl40Day"]:
+        print(f"{latest_averages['Date'].strftime('%Y-%m-%d')} sell aapl")
         aapl_curr = "lower"
-    elif aapl_curr == "lower" and latest_aapl10Day > latest_aapl40Day:
-        print(f"{latest_date_str} buy aapl")
+    elif aapl_curr == "lower" and latest_averages["aapl10Day"] > latest_averages["aapl40Day"]:
+        print(f"{latest_averages['Date'].strftime('%Y-%m-%d')} buy aapl")
+
         aapl_curr = "higher"
 
-    if msft_curr == "higher" and latest_msft10Day < latest_msft40Day:
-        print(f"{latest_date_str} sell msft")
+    if msft_curr == "higher" and latest_averages["msft10Day"] < latest_averages["msft40Day"]:
+        print(f"{latest_averages['Date'].strftime('%Y-%m-%d')} sell msft")
+
         msft_curr = "lower"
-    elif msft_curr == "lower" and latest_msft10Day > latest_msft40Day:
-        print(f"{latest_date_str} buy msft")
+    elif msft_curr == "lower" and latest_averages["msft10Day"] > latest_averages["msft40Day"]:
+        print(f"{latest_averages['Date'].strftime('%Y-%m-%d')} buy msft")
+
         msft_curr = "higher"
         
     time.sleep(15.0)

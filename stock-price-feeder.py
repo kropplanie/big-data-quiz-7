@@ -38,6 +38,7 @@ td = TDClient(apikey=api_key)
 symbols = ['AAPL', 'MSFT']
 stream_data = {}
 for sym in symbols:
+    print(f"(starting data collection for {sym}")
     symbol_data = []  # list to store the data for the current symbol
     set_start_date = "2024-01-01"
     # Loop through the 40 days, requesting one day of data at a time
@@ -125,7 +126,7 @@ msft_curr = "higher" if latest_averages["msft10Day"] > latest_averages["msft40Da
 # !pip install yahoo_fin
 # this version isn't actually real-time prices because we wouldn't get enough examples of when 
 
-
+print("starting live data stream simulation")
 # aaplPrice and msftPrice streams
 for t in range(100):
     # request the next day of data for AAPL and MSFT (starting with the first day after the most recent date in aligned_df)

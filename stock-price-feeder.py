@@ -30,7 +30,9 @@ import os
 api_key = os.getenv("TWELVE_DATA_API_KEY")
 if not api_key:
     print("API key is missing!")
-    sys.exit(1)td = TDClient(apikey=api_key)
+    sys.exit(1)
+    
+td = TDClient(apikey=api_key)
 
 # request the data from twelvedata and store it in a dictionary with a key for each stock
 symbols = ['AAPL', 'MSFT']

@@ -42,6 +42,7 @@ for sym in symbols:
                         interval="1day", 
                         start_date= "2024-01-01",
                         outputsize=40).as_pandas()
+    time.sleep(25)
     stream_data[sym] = ts[['close']].rename(columns={'close': f"{sym}_price"})
 
 sys.stdout.reconfigure(encoding='utf-8')
@@ -157,6 +158,6 @@ for t in range(100):
 
         msft_curr = "higher"
         
-    time.sleep(15.0)
+    time.sleep(25.0)
 
 exit(0)

@@ -189,7 +189,7 @@ for t in range(100):
 
     
     # update the values of latest_aapl10Day, latest_aapl40Day, latest_msft10Day, and latest_msft40Day
-    latest_averages = aligned_df.orderBy(F.desc("Date")).select("aapl10Day", "aapl40Day", "msft10Day", "msft40Day").first()
+    latest_averages = aligned_df.orderBy(F.desc("Date")).select("Date", "aapl10Day", "aapl40Day", "msft10Day", "msft40Day").first()
     
     # make the trading recommendations if appropriate
     

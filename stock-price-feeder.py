@@ -194,19 +194,19 @@ for t in range(100):
     # make the trading recommendations if appropriate
     
     if aapl_curr == "higher" and latest_averages["aapl10Day"] < latest_averages["aapl40Day"]:
-        print(f"{latest_averages['Date'].strftime('%Y-%m-%d')} sell aapl")
+        print(f"{latest_averages['Date']} sell aapl")
         aapl_curr = "lower"
     elif aapl_curr == "lower" and latest_averages["aapl10Day"] > latest_averages["aapl40Day"]:
-        print(f"{latest_averages['Date'].strftime('%Y-%m-%d')} buy aapl")
+        print(f"{latest_averages['Date']} buy aapl")
         aapl_curr = "higher"
     else: 
         print('No trade recommended')
 
     if msft_curr == "higher" and latest_averages["msft10Day"] < latest_averages["msft40Day"]:
-        print(f"{latest_averages['Date'].strftime('%Y-%m-%d')} sell msft")
+        print(f"{latest_averages['Date']} sell msft")
         msft_curr = "lower"
     elif msft_curr == "lower" and latest_averages["msft10Day"] > latest_averages["msft40Day"]:
-        print(f"{latest_averages['Date'].strftime('%Y-%m-%d')} buy msft")
+        print(f"{latest_averages['Date']} buy msft")
         msft_curr = "higher"
     else: 
         print('No trade recommended')

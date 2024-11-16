@@ -140,6 +140,7 @@ for t in range(5):
     next_date = (datetime.strptime(str(latest_date), "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
     next_end_date = (datetime.strptime(str(next_date), "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
     print(f"(Requesting data for {next_date})")
+    """
     #added a try statement due to some errors in previous runs
     try: #added a try statement due to some errors in previous runs
         new_aapl_price = td.time_series(symbol="AAPL", interval="1day", start_date=next_date, end_date=next_end_date, outputsize=1).as_pandas().iloc[0]['close']
@@ -185,7 +186,7 @@ for t in range(5):
     else: 
         print('No trade recommended')
         
-    time.sleep(15.0)
+    time.sleep(15.0)"""
 
 
 exit(0)

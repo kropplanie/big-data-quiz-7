@@ -155,7 +155,7 @@ next_date = (datetime.strptime(str(latest_date), "%Y-%m-%d") + timedelta(days=1)
 next_end_date = (datetime.strptime(str(next_date), "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
 
 # aaplPrice and msftPrice streams
-for t in range(5):
+for t in range(100):
     # request the next day of data for AAPL and MSFT (starting with the first day after the most recent date in aligned_df)
     next_date = next_end_date
     next_end_date = (datetime.strptime(str(next_date), "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")

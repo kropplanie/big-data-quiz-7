@@ -17,6 +17,7 @@ from twelvedata import TDClient
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 from datetime import datetime, timedelta
+from pyspark.sql import Row
 
 
 # Initialize Spark session
@@ -164,7 +165,9 @@ for t in range(5):
         ["Date", "AAPL_price", "MSFT_price"]
     )
 
-
+    new_row_data = Row(Date=next_date, AAPL_price=new_aapl_price, MSFT_price=new_msft_price,
+                   aapl10Day=None, aapl40Day=None, msft10Day=None, msft40Day=None)
+    new_row = spark.createDataFrame([new_row_data])
     aligned_df = aligned_df.union(new_row)
 
     

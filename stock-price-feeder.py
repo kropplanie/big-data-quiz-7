@@ -18,6 +18,8 @@ from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 from datetime import datetime, timedelta
 from pyspark.sql import Row
+from pyspark.sql.types import StructType, StructField, StringType, FloatType
+
 
 
 # Initialize Spark session
@@ -133,6 +135,18 @@ msft_curr = "higher" if latest_averages["msft10Day"] > latest_averages["msft40Da
 # this version isn't actually real-time prices because we wouldn't get enough examples of when 
 
 print("starting live data stream simulation")
+schema = StructType([
+    StructField("Date", StringType(), True),
+    StructField("AAPL_price", FloatType(), True),
+    StructField("MSFT_price", FloatType(), True),
+    StructField("aapl10Day", FloatType(), True),
+    StructField("aapl40Day", FloatType(), True),
+    StructField("msft10Day", FloatType(), True),
+    StructField("msft40Day", FloatType(), True)
+])
+
+
+
 
 latest_date = aligned_df.agg(F.max("Date")).collect()[0][0]
 latest_date = str(latest_date).split(' ')[0]  # Get only the date part
@@ -156,20 +170,15 @@ for t in range(5):
         time.sleep(15)
         continue
     
-    # append the date and prices as a new row in aligned_df
-    new_aapl_price = float(new_aapl_price)  # Convert numpy.float64 to float
-    new_msft_price = float(new_msft_price)  # Convert numpy.float64 to float
+    # append the date and prices as a new row in aligned_df    
+    new_row_data = [(str(next_date), float(new_aapl_price), float(new_msft_price),
+                 None, None, None, None)]
 
-    new_row = spark.createDataFrame(
-        [(next_date, new_aapl_price, new_msft_price)],
-        ["Date", "AAPL_price", "MSFT_price"]
-    )
-
-    new_row_data = Row(Date=next_date, AAPL_price=new_aapl_price, MSFT_price=new_msft_price,
-                   aapl10Day=None, aapl40Day=None, msft10Day=None, msft40Day=None)
-    new_row = spark.createDataFrame([new_row_data])
+    # Create the new_row DataFrame with the specified schema
+    new_row = spark.createDataFrame(new_row_data, schema)
+    
+    # Union with aligned_df
     aligned_df = aligned_df.union(new_row)
-
     
     # calculate the updated 40 and 10 day averages for each and store them in the appropriate columns
     aligned_df = aligned_df \

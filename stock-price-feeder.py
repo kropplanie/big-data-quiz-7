@@ -156,7 +156,15 @@ for t in range(5):
         continue
     
     # append the date and prices as a new row in aligned_df
-    new_row = spark.createDataFrame([(next_date, new_aapl_price, new_msft_price)], ["Date", "AAPL_price", "MSFT_price"])
+    new_aapl_price = float(new_aapl_price)  # Convert numpy.float64 to float
+    new_msft_price = float(new_msft_price)  # Convert numpy.float64 to float
+
+    new_row = spark.createDataFrame(
+        [(next_date, new_aapl_price, new_msft_price)],
+        ["Date", "AAPL_price", "MSFT_price"]
+    )
+
+
     aligned_df = aligned_df.union(new_row)
 
     

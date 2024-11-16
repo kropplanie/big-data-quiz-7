@@ -132,12 +132,17 @@ msft_curr = "higher" if latest_averages["msft10Day"] > latest_averages["msft40Da
 # this version isn't actually real-time prices because we wouldn't get enough examples of when 
 
 print("starting live data stream simulation")
+
+latest_date = aligned_df.agg(F.max("Date")).collect()[0][0]
+latest_date = str(latest_date).split(' ')[0]  # Get only the date part
+
+next_date = (datetime.strptime(str(latest_date), "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+next_end_date = (datetime.strptime(str(next_date), "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+
 # aaplPrice and msftPrice streams
 for t in range(5):
     # request the next day of data for AAPL and MSFT (starting with the first day after the most recent date in aligned_df)
-    latest_date = aligned_df.agg(F.max("Date")).collect()[0][0]
-    latest_date = str(latest_date).split(' ')[0]  # Get only the date part
-    next_date = (datetime.strptime(str(latest_date), "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+    next_date = next_end_date
     next_end_date = (datetime.strptime(str(next_date), "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
     print(f"(Requesting data for {next_date})")
     """

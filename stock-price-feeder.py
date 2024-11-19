@@ -213,5 +213,59 @@ for t in range(600):
         
     time.sleep(15.0)
 
+"""
+Code for pulling live data:
+
+for t in range(10):
+    now = datetime.datetime.now()
+    aappl_price = stock_info.get_live_price('AAPL')
+    msft_price = stock_info.get_live_price('MSFT')
+    new_row_data = [(str(now), float(new_aapl_price), float(new_msft_price),
+                 None, None, None, None)]
+
+    # Create the new_row DataFrame with the specified schema
+    new_row = spark.createDataFrame(new_row_data, schema)
+    
+    # Union with aligned_df
+    aligned_df = aligned_df.union(new_row)
+    
+    # calculate the updated 40 and 10 day averages for each and store them in the appropriate columns
+    aligned_df = aligned_df \
+        .withColumn("aapl10Day", F.avg("AAPL_price").over(window_spec_10)) \
+        .withColumn("aapl40Day", F.avg("AAPL_price").over(window_spec_40)) \
+        .withColumn("msft10Day", F.avg("MSFT_price").over(window_spec_10)) \
+        .withColumn("msft40Day", F.avg("MSFT_price").over(window_spec_40))
+
+    
+    # update the values of latest_aapl10Day, latest_aapl40Day, latest_msft10Day, and latest_msft40Day
+    latest_averages = aligned_df.orderBy(F.desc("Date")).select("Date", "aapl10Day", "aapl40Day", "msft10Day", "msft40Day").first()
+    
+    # make the trading recommendations if appropriate
+    
+    if aapl_curr == "higher" and latest_averages["aapl10Day"] < latest_averages["aapl40Day"]:
+        print(f"{latest_averages['Date']} sell aapl")
+        aapl_curr = "lower"
+    elif aapl_curr == "lower" and latest_averages["aapl10Day"] > latest_averages["aapl40Day"]:
+        print(f"{latest_averages['Date']} buy aapl")
+        aapl_curr = "higher"
+    else: 
+        print('No trade recommended')
+
+    if msft_curr == "higher" and latest_averages["msft10Day"] < latest_averages["msft40Day"]:
+        print(f"{latest_averages['Date']} sell msft")
+        msft_curr = "lower"
+    elif msft_curr == "lower" and latest_averages["msft10Day"] > latest_averages["msft40Day"]:
+        print(f"{latest_averages['Date']} buy msft")
+        msft_curr = "higher"
+    else: 
+        print('No trade recommended')
+    
+    time.sleep(15.0)
+
+
+"""
+
+
+
 
 exit(0)
